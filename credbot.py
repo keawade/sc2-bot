@@ -43,7 +43,7 @@ class CredBot(sc2.BotAI):
     async def build_pylons(self):
         # TODO: Don't build between the nexus and the resouces!
         # TODO: Check queued unit construction as well as existing supply use
-        # TODO: Spread pylons
+        # TODO: Spread pylons (Need to have forward/side/rear pylons to select!)
         if self.supply_left < 5 and not self.already_pending(PYLON):
             nexuses = self.units(NEXUS).ready
             if nexuses.exists:
@@ -77,21 +77,21 @@ class CredBot(sc2.BotAI):
         if self.units(PYLON).ready.exists:
             if self.units(GATEWAY).ready.exists and not self.units(CYBERNETICSCORE):
                 if self.can_afford(CYBERNETICSCORE) and not self.already_pending(CYBERNETICSCORE):
-                    # TODO: Select rear pylon for cybernetics core
+                    # TODO: Select rear pylons for cybernetics core
                     pylon = self.units(PYLON).ready.random
                     await self.build(CYBERNETICSCORE, near=pylon)
 
             # Limits gateways to roughly one per minute
-            elif len(self.units(GATEWAY)) < (self.iteration / self.ITERATIONS_PER_MINUTE):
+            elif len(self.units(GATEWAY)) < (self.iteration / self.ITERATIONS_PER_MINUTE) / 2:
                 if self.units(GATEWAY).amount < 4 and self.can_afford(GATEWAY) and not self.already_pending(GATEWAY):
-                    # TODO: Select forward pylon for gateways
+                    # TODO: Select forward pylons for gateways
                     pylon = self.units(PYLON).ready.random
                     await self.build(GATEWAY, near=pylon)
 
             if self.units(CYBERNETICSCORE).ready.exists:
                 if len(self.units(STARGATE)) < ((self.iteration / self.ITERATIONS_PER_MINUTE) / 2):
                     if self.can_afford(STARGATE) and not self.already_pending(STARGATE):
-                        # TODO: Select rear or side pylon for stargates
+                        # TODO: Select rear or side pylons for stargates
                         pylon = self.units(PYLON).ready.random
                         await self.build(STARGATE, near=pylon)
 
