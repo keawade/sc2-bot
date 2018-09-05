@@ -33,7 +33,7 @@ class CredBot(sc2.BotAI):
     # TODO: Garbage collect queued (but not constructing) units?
 
     async def build_workers(self):
-        # TODO: Refine the 16 Probes per Nexus calculation. Should be based on how many mineral nodes are available near nexuses.
+        # TODO: Refine the 16 Probes per Nexus calculation. Should be based on how many mineral nodes and assimilators are available near nexuses.
         # TODO: Check for queued probes as well?
         if len(self.units(NEXUS) * 16) > len(self.units(PROBE)) and len (self.units(PROBE)) < self.MAX_WORKERS:
             for nexus in self.units(NEXUS).ready.noqueue:
@@ -52,13 +52,13 @@ class CredBot(sc2.BotAI):
                     await self.build(PYLON, near=nexuses.random)
 
     async def expand(self):
-        # TODO: Slow down expansion (Wait for excess resources?)
-        if self.units(NEXUS).amount < (self.iteration / self.ITERATIONS_PER_MINUTE) and self.can_afford(NEXUS):
+        # TODO: Keep expanding as mineral nodes expire
+        if self.units(NEXUS).amount < self.get_minute(self.iteration) and self.can_afford(NEXUS):
             await self.expand_now()
 
     async def build_assimilators(self):
         for nexus in self.units(NEXUS).ready:
-            if self.units(ASSIMILATOR).amount < (self.iteration / self.ITERATIONS_PER_MINUTE / 2) and self.can_afford(ASSIMILATOR):
+            if self.units(ASSIMILATOR).amount < self.get_minute(self.iteration) / 2 and self.can_afford(ASSIMILATOR):
                 # TODO: Check existing assimilator count?
                 # Range 25 was a bit too far. Ended up building in other bases and things got weird when workers got distributed
                 geysers = self.state.vespene_geyser.closer_than(15.0, nexus)
@@ -72,6 +72,7 @@ class CredBot(sc2.BotAI):
                         await self.do(worker.build(ASSIMILATOR, geyser))
 
     async def offensive_force_buildings(self):
+        # TODO: Add a maximum count of buildings as a function of available mineral nodes
         # TODO: Build a Robotics Facility to build an observer
         # TODO: Avoid building between a Nexus and its resources
         if self.units(PYLON).ready.exists:
@@ -82,14 +83,14 @@ class CredBot(sc2.BotAI):
                     await self.build(CYBERNETICSCORE, near=pylon)
 
             # Limits gateways to roughly one per minute
-            elif len(self.units(GATEWAY)) < (self.iteration / self.ITERATIONS_PER_MINUTE) / 2:
+            elif len(self.units(GATEWAY)) < self.get_minute(self.iteration) / 2:
                 if self.units(GATEWAY).amount < 4 and self.can_afford(GATEWAY) and not self.already_pending(GATEWAY):
                     # TODO: Select forward pylons for gateways
                     pylon = self.units(PYLON).ready.random
                     await self.build(GATEWAY, near=pylon)
 
             if self.units(CYBERNETICSCORE).ready.exists:
-                if len(self.units(STARGATE)) < ((self.iteration / self.ITERATIONS_PER_MINUTE) / 2):
+                if len(self.units(STARGATE)) < self.get_minute(self.iteration) / 2:
                     if self.can_afford(STARGATE) and not self.already_pending(STARGATE):
                         # TODO: Select rear or side pylons for stargates
                         pylon = self.units(PYLON).ready.random
@@ -142,7 +143,10 @@ class CredBot(sc2.BotAI):
             # TODO: Don't just run to the top left corner on four start maps
             return self.enemy_start_locations[0]
 
+    def get_minute(self, iteration):
+        return iteration / self.ITERATIONS_PER_MINUTE
+
 run_game(maps.get("AbyssalReefLE"), [
     Bot(Race.Protoss, CredBot()),
     Computer(Race.Terran, Difficulty.Hard)
-], realtime=True)
+], realtime=False)
