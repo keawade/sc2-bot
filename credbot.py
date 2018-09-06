@@ -3,8 +3,10 @@
 import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
+# pylint: disable=E0611
 from sc2.constants import NEXUS, PYLON, ASSIMILATOR, CYBERNETICSCORE, GATEWAY, STARGATE
 from sc2.constants import PROBE, STALKER, ZEALOT, VOIDRAY
+# pylint: enable=E0611
 
 import random
 
